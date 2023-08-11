@@ -21,6 +21,5 @@ glob, scipy, numpy, cv2, matplotlib, pydicom, SiimpleITK, tqdm
     * root_path ： the normalized data path, same as the save_root_path in 1_ctpro_wo_mask.py file
     * save_root_path ：the Xray output path
     * plasti_path ： DDR software executable file location 
-- add train.txt and test.txt to dataset_list_from_X2CT from X2CT-GAN github (https://github.com/kylekma/X2CT/tree/master)
 - 3_make_h5_dataset.py
 - 4_ct_dataset_prepare.py
