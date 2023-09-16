@@ -30,7 +30,7 @@ class INREncoderZoomAxisInAlign(nn.Module):
         network_module = self.metadata['main_model_of_encoder']['network_module']
         network_module, net_class = network_module.rsplit(".", 1)
         # nerf paramater's node is diff
-        if net_class in ['PerspectiveINRNet', 'OrthogonalINRNet']:
+        if net_class in ['PerspectiveINRNet']:
             cfg, self.network_query_fn = model_utils.update_nerf_params(**self.metadata['main_model_of_encoder']['params']['cfg']['nerf_params'])
             if self.axis_in_position == 'before_inr': 
                 cfg['input_ch'] += self.metadata['axis_emb_dim']

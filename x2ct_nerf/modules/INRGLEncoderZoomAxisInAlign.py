@@ -32,9 +32,9 @@ class INRGLEncoderZoomAxisInAlignNeRF(nn.Module):
 
         network_module = self.metadata['main_model_of_encoder']['network_module']
         network_module, net_class = network_module.rsplit(".", 1)
-        assert net_class in ['PerspectiveConcatAfterINRGLNet', 'PerspectiveINRGLConCatNet']
+        assert net_class in ['PerspectiveConcatAfterINRGLNet']
 
-        if net_class in ['PerspectiveConcatAfterINRGLNet', 'PerspectiveINRGLConCatNet']:
+        if net_class in ['PerspectiveConcatAfterINRGLNet']:
             cfg, self.network_query_fn = model_utils.update_nerf_params(**self.metadata['main_model_of_encoder']['params']['cfg']['nerf_params'])
             self.embed_fn, cfg['input_ch'] = nerf_helpers.get_embedder(cfg['multires'], cfg['i_embed'])
             n_cond = self.metadata['main_model_of_encoder']['params']['cfg']['N_cond']
