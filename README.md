@@ -28,7 +28,7 @@ Create a conda environment, activate it, and install the required packages:
 $ conda create -n perx2ct python=3.8
 $ conda activate perx2ct
 $ pip install --upgrade pip
-$ pip install -r requirements.txt
+$ pip install -r requirement.txt
 ```
 
 
