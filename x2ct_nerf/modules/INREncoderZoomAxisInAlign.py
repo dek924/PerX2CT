@@ -191,7 +191,6 @@ class INREncoderZoomAxisInAlign(nn.Module):
 
         transformed_feature_points = torch.stack(transformed_feature_points)  # (batch, feature_res, feature_res, 1, 3)
         gt_ctslices = torch.cat(gt_ctslices, dim=0)
-        #assert transformed_feature_points.shape[1] == self.metadata["feature_res"] and transformed_feature_points.shape[2] == self.metadata["feature_res"]
         return transformed_feature_points, gt_ctslices, axis
 
     def _get_nograd_nerf(self):
@@ -226,7 +225,6 @@ class INREncoderZoomAxisInAlign(nn.Module):
                 if len(smp_idx) > 0:
                     nerf_input = nerf_inputs[:, smp_idx]
                     if grad == "off":  # Not use this code
-                        #assert True, print("This code shouldn't run")
                         with torch.no_grad():
                             nograd_nerf = self._get_nograd_nerf()
                             all_output = self.network_query_fn(nerf_input, None, nograd_nerf)
@@ -242,7 +240,6 @@ class INREncoderZoomAxisInAlign(nn.Module):
                             all_outputs[k] = all_outputs[k].type(all_output[k].dtype)
                         all_outputs[k][:, smp_idx] = all_output[k]
 
-        # all_outputs.keys : 'outputs', (optinal: 'dx', 'dsigma')
         return all_outputs
 
     def forward(self, inputs: dict, full_render_partial_grad=False, gt_ct=None, p0=None, zoom_size=None):

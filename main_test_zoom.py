@@ -397,11 +397,15 @@ def run_test(dicts, config):
 
 @torch.no_grad()
 def main_test(args):
-    saved_log_root = args.path
-    ckpt_name = args.ckpt_name
+    saved_log_root = args.save_dir
+    ckpt_name = args.ckpt_path.split("/")[-1] if args.ckpt_path is not None else args.ckpt_name
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    config_file = glob.glob(f"{saved_log_root}/configs/*-project.yaml")[0]
+    if args.config_path is not None:
+        config_file = args.config_path
+    else:
+        config_file = glob.glob(f"{saved_log_root}/configs/*-project.yaml")[0]
+    
     config = load_config(config_file, display=False)
     config['model']['params']['metadata']['encoder_params']['params']['zoom_resolution_div'] = 1
     config['model']['params']['metadata']['encoder_params']['params']['zoom_min_scale'] = 0
@@ -412,7 +416,12 @@ def main_test(args):
     dataset_type = config['data']['params']['validation']['params']['test_images_list_file'].split("/")[-2]
     for prefix, cfg in zip(prefixs, configs):
         model_module = cfg['model']['target']
-        model_file = f"{saved_log_root}/checkpoints/{ckpt_name}"
+        if args.ckpt_path is not None:
+            model_file = args.ckpt_path
+        elif args.ckpt_name is not None:
+            model_file = f"{saved_log_root}/checkpoints/{ckpt_name}"
+        else:
+            raise ValueError("ckpt_path or ckpt_name should be provided")
         model = load_vqgan(config=cfg, model_module=model_module, ckpt_path=model_file).to(DEVICE)
 
         # dataloader
@@ -427,8 +436,8 @@ def main_test(args):
 
 
 def main_test_random_crop(args):
-    saved_log_root = args.path
-    ckpt_name = args.ckpt_name
+    saved_log_root = args.save_dir
+    ckpt_name = args.ckpt_path.split("/")[-1] if args.ckpt_path is not None else args.ckpt_name
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     config_file = glob.glob(f"{saved_log_root}/configs/*-project.yaml")[0]
@@ -444,7 +453,12 @@ def main_test_random_crop(args):
 
     for prefix, cfg in zip(prefixs, configs):
         model_module = cfg['model']['target']
-        model_file = f"{saved_log_root}/checkpoints/{ckpt_name}"
+        if args.ckpt_path is not None:
+            model_file = args.ckpt_path
+        elif args.ckpt_name is not None:
+            model_file = f"{saved_log_root}/checkpoints/{ckpt_name}"
+        else:
+            raise ValueError("ckpt_path or ckpt_name should be provided")
         model = load_vqgan(config=cfg, model_module=model_module, ckpt_path=model_file).to(DEVICE)
 
         # dataloader
@@ -459,14 +473,17 @@ def main_test_random_crop(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Text to Radiance Fields')
-    parser.add_argument('--path', type=str, help='path to saved_folder')
-    parser.add_argument('--ckpt_name', type=str, default='last.ckpt', help='ckpt file name')
+    parser.add_argument('--save_dir', type=str, help='path to saved_folder')
     parser.add_argument('--val_test', type=str, default='val', help='val or test')
     parser.add_argument('--save_result', action='store_false', help='save result, default = True, Set this to False to find best model')
     parser.add_argument('--zoom_size', type=int, default=None, help='zoom image size')
     parser.add_argument('--intp', action='store_true', default=False, help='interpolation')
+    parser.add_argument('--config_path', type=str, default="./configs/PerX2CT_global_w_zoomin.yaml")
+    parser.add_argument('--ckpt_path', type=str, default="./checkpoints/PerX2CT_global.ckpt")
+    parser.add_argument('--ckpt_name', type=str, default='last.ckpt', help='ckpt file name')
 
     args = parser.parse_args()
+    assert (args.ckpt_path is not None) or (args.ckpt_name is not None)
     torch.set_grad_enabled(False)
 
     if args.zoom_size is None:
@@ -476,7 +493,7 @@ if __name__ == "__main__":
             args.zoom_size = np.float64(zoom_size)
 
             print()
-            print(args.path)
+            print(args.save_dir)
             main_test(args)
 
     else:
@@ -485,5 +502,5 @@ if __name__ == "__main__":
         args.zoom_size = np.float64(args.zoom_size)
 
         print()
-        print(args.path)
+        print(args.save_dir)
         main_test(args)

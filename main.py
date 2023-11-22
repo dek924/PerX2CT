@@ -1,24 +1,23 @@
 import os
 import sys
 import glob
+import wandb
 import datetime
 import argparse
 import importlib
-from omegaconf import OmegaConf
 import numpy as np
-from PIL import Image
 import torch
 import torchvision
-from torch.utils.data import random_split, DataLoader, Dataset
 import pytorch_lightning as pl
+
+from PIL import Image
+from omegaconf import OmegaConf
+from taming.data.utils import custom_collate
 from pytorch_lightning import seed_everything
 from pytorch_lightning.trainer import Trainer
-from pytorch_lightning.callbacks import ModelCheckpoint, Callback, LearningRateMonitor
 from pytorch_lightning.utilities.distributed import rank_zero_only
-import wandb
-import pdb
-
-from taming.data.utils import custom_collate
+from pytorch_lightning.callbacks import ModelCheckpoint, Callback, LearningRateMonitor
+from torch.utils.data import DataLoader, Dataset
 
 
 def get_obj_from_str(string, reload=False):
@@ -383,11 +382,7 @@ class ImageLogger(Callback):
                 if isinstance(images[k], torch.Tensor):
                     images[k] = images[k].detach().cpu()
                     if self.clamp:
-                        #images[k] = torch.clamp(images[k], -1., 1.)
                         images[k] = torch.clamp(images[k], 0., 1.)
-
-            # self.log_local(pl_module.logger.save_dir, split, images,
-            #                pl_module.global_step, pl_module.current_epoch, batch_idx)
 
             logger_log_images = self.logger_log_images.get(logger, lambda *args, **kwargs: None)
             logger_log_images(pl_module, images, pl_module.global_step, split)

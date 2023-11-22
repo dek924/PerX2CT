@@ -83,9 +83,6 @@ class AEModel(pl.LightningModule):
 
     def decode_code(self, code_b):
         pass
-        # quant_b = self.quantize.embed_code(code_b)
-        # dec = self.decode(quant_b)
-        # return dec
 
     def forward(self, input):
         feature = self.encode(input)
@@ -158,10 +155,8 @@ class AEModel(pl.LightningModule):
 
         discloss, log_dict_disc = self.loss(qloss, x, xrec_dict, 1, self.global_step,
                                             last_layer=self.get_last_layer(), split="val")
-        #rec_loss = log_dict_ae["val/rec_loss"]
         log_dict_ae['val/psnr'] = self.psnr(xrec_dict["outputs"], x)
         self.log(self.monitor, log_dict_ae[self.monitor], prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
-        #self.log("val/aeloss", aeloss, prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
         self.log_dict(log_dict_ae)
         self.log_dict(log_dict_disc)
         self.print_loss(log_dict_ae)
@@ -318,10 +313,8 @@ class INRAEModel(AEModel):
 
         discloss, log_dict_disc = self.loss(qloss, x, xrec_dict, 1, self.global_step,
                                             last_layer=self.get_last_layer(), split="val")
-        #rec_loss = log_dict_ae["val/rec_loss"]
         log_dict_ae['val/psnr'] = self.psnr(xrec_dict["outputs"], x)
         self.log(self.monitor, log_dict_ae[self.monitor], prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
-        #self.log("val/aeloss", aeloss, prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
         self.log_dict(log_dict_ae)
         self.log_dict(log_dict_disc)
         self.print_loss(log_dict_ae)
@@ -500,7 +493,7 @@ class INRAEModelMultiDecoderOut(INRAEModel):
         h = self.encoder(batch)
         if self.use_quant_conv:
             h['outputs'] = self.quant_conv(h['outputs'])
-        # quant, _, _ = self.quantize(h)
+
         # decode
         output_dict = self.decode(h['outputs'])
         output_dict_dict = {}
@@ -511,9 +504,6 @@ class INRAEModelMultiDecoderOut(INRAEModel):
         for k, v in batch.items():
             if k in self.metadata['encoder_params']['params']['cond_list']:
                 log[k] = v
-
-        # log["inputs"] = x
-        # log["reconstructions"] = output_dict_dict['final']['outputs']
 
         for output_k, xrec_dict in output_dict_dict.items():
             if xrec_dict['outputs'].shape[-1] != x.shape[-1]:
@@ -638,10 +628,8 @@ class INRAEUNetModel(INRAEModel):
 
         discloss, log_dict_disc = self.loss(qloss, x, xrec_dict, 1, self.global_step,
                                             last_layer=self.get_last_layer(), split="val")
-        #rec_loss = log_dict_ae["val/rec_loss"]
         log_dict_ae['val/psnr'] = self.psnr(xrec_dict["outputs"], x)
         self.log(self.monitor, log_dict_ae[self.monitor], prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
-        #self.log("val/aeloss", aeloss, prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
         self.log_dict(log_dict_ae)
         self.log_dict(log_dict_disc)
         self.print_loss(log_dict_ae)
@@ -761,11 +749,6 @@ class INRAETemplateModel(AEModel):
         return output_dict
 
     def training_step(self, batch, batch_idx, optimizer_idx):
-        #print("Training step")
-        # pdb.set_trace()
-
-        # with torch.autograd.set_detect_anomaly(True):
-        # self.temperature_scheduling()
         batch = self.get_input(batch)
         batch = self.setting_base(batch)
         batch['image_key'] = self.image_key
@@ -864,7 +847,6 @@ class INRAETemplateModel(AEModel):
         batch['base_mask'] = [1 if p1.split('/')[-3] == p2.split('/')[-3] else 0 for p1, p2 in zip(batch['base_file_path_'], batch['file_path_'])]
         batch['base_mask'] = torch.tensor(batch['base_mask'], device=batch['ctslice'].device).bool()
         self.encoder.network_fn.base_mask = batch['base_mask']
-        # self.encoder.network_fn.base_mask = torch.tensor(batch['base_mask'], device=batch['ctslice'].device).bool()
         return batch
 
     def setting_base_val(self, batch):

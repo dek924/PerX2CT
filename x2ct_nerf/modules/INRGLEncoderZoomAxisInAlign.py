@@ -150,7 +150,6 @@ class INRGLEncoderZoomAxisInAlignNeRF(nn.Module):
         transformed_points_in_gt = torch.cat((transformed_points_in_gt[0].unsqueeze(-1),
                                               transformed_points_in_gt[1].unsqueeze(-1),
                                               transformed_points_in_gt[2].unsqueeze(-1)), dim=-1)
-        #transformed_points_in_gt = transformed_points_in_gt.unsqueeze(0).repeat(batch_size, 1, 1, 1, 1).cuda()
         transformed_points_in_gt = transformed_points_in_gt.unsqueeze(0).cuda()
         transformed_points = self.gt2world_coordinate(transformed_points_in_gt)
         device = transformed_points.get_device()
@@ -208,7 +207,6 @@ class INRGLEncoderZoomAxisInAlignNeRF(nn.Module):
 
         transformed_feature_points = torch.stack(transformed_feature_points)  # (batch, feature_res, feature_res, 1, 3)
         gt_ctslices = torch.cat(gt_ctslices, dim=0)
-        #assert transformed_feature_points.shape[1] == self.metadata["feature_res"] and transformed_feature_points.shape[2] == self.metadata["feature_res"]
         return transformed_feature_points, gt_ctslices, axis
 
     def _get_nograd_nerf(self):
@@ -225,7 +223,6 @@ class INRGLEncoderZoomAxisInAlignNeRF(nn.Module):
         global_inputs = latent_zs_dict['global']
         local_inputs = latent_zs_dict['local']
         nerf_inputs = transformed_points
-        #nerf_inputs = torch.cat((transformed_points, ), dim=-1)
 
         all_smp_idx = [i for i in range(0, (transformed_points.shape[1]))]
         if full_render_partial_grad:
@@ -253,7 +250,6 @@ class INRGLEncoderZoomAxisInAlignNeRF(nn.Module):
                     local_input = local_inputs[:, smp_idx]
                     global_input = global_inputs
                     if grad == "off":  # Not use this code
-                        #assert True, print("This code shouldn't run")
                         with torch.no_grad():
                             nograd_nerf = self._get_nograd_nerf()
                             embedded = self.embed_fn(nerf_input)
@@ -272,7 +268,6 @@ class INRGLEncoderZoomAxisInAlignNeRF(nn.Module):
                         all_output = self.network_fn(embedded, local_input, global_input)
                         if self.axis_in_position == 'after_inr':
                             all_output['outputs'] = torch.cat((all_output['outputs'], axis_info), dim=-1)
-                        # all_output = self.network_query_fn(nerf_input, None, self.network_fn)
 
                     assert isinstance(all_output, dict)
                     for k in all_output:
@@ -295,7 +290,6 @@ class INRGLEncoderZoomAxisInAlignNeRF(nn.Module):
         with torch.no_grad():
             transformed_points, gt_ctslices, axis = self.get_rays_for_no_rendering(inputs, p0, zoom_size)
             nrays_grad_on = self.N_rays_ctslice_grad_on
-            #transformed_points: (batch_size, args.img_res * args.img_res, args.N_samples, 3)
             (batch_size, H, W, N_samples, coord_dim) = transformed_points.shape  # coord_dim : 3 + self.metadata['axis_emb_dim']
             transformed_points = transformed_points.reshape(batch_size, -1, coord_dim)
 
@@ -314,10 +308,8 @@ class INRGLEncoderZoomAxisInAlignNeRF(nn.Module):
             all_outputs = self.run_nerf((batch_size, H, W, N_samples), transformed_points, nrays_grad_on,
                                         latent_zs_dict, full_render_partial_grad=full_render_partial_grad)
             all_outputs['outputs'] = all_outputs['outputs'].permute(0, 2, 1)
-            #all_outputs['outputs'] = all_outputs['outputs'].reshape(batch_size, self.output_ch, H, W)
             all_outputs['outputs'] = all_outputs['outputs'].reshape(batch_size, -1, H, W)
 
-        # all_outputs.keys : 'outputs', (optinal: 'dx', 'dsigma')
         all_outputs['cropped_ctslice'] = gt_ctslices
         return all_outputs
 

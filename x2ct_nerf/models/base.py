@@ -107,12 +107,9 @@ class BaseModel(pl.LightningModule):
         xrec = self(x)
         aeloss, log_dict_ae = self.loss(x, xrec, 0, self.global_step, split="val")
         discloss, log_dict_disc = self.loss(x, xrec, 1, self.global_step, split="val")
-        #rec_loss = log_dict_ae["val/rec_loss"]
         log_dict_ae['val/psnr'] = self.psnr(xrec["outputs"], x)
         self.log(self.monitor, log_dict_ae[self.monitor],
                  prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
-        # self.log("val/aeloss", aeloss,
-        #            prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
         self.log_dict(log_dict_ae)
         self.log_dict(log_dict_disc)
         self.print_loss(log_dict_ae)
@@ -208,7 +205,6 @@ class INRModel(BaseModel):
             aeloss, log_dict_ae = self.loss(qloss, x, xrec_dict, optimizer_idx, self.global_step,
                                             split="train")
             log_dict_ae['train/psnr'] = self.psnr(xrec_dict["outputs"], x)
-            #log_dict_ae['train/lr'] = self.learning_rate
             self.log_dict(log_dict_ae, prog_bar=False, logger=True, on_step=True, on_epoch=False)
             self.print_loss(log_dict_ae)
             return aeloss
@@ -234,10 +230,8 @@ class INRModel(BaseModel):
 
         discloss, log_dict_disc = self.loss(qloss, x, xrec_dict, 1, self.global_step,
                                             split="val")
-        #rec_loss = log_dict_ae["val/rec_loss"]
         log_dict_ae['val/psnr'] = self.psnr(xrec_dict["outputs"], x)
         self.log(self.monitor, log_dict_ae[self.monitor], prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
-        #self.log("val/aeloss", aeloss, prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
         self.log_dict(log_dict_ae)
         self.log_dict(log_dict_disc)
         self.print_loss(log_dict_ae)

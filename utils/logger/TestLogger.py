@@ -44,4 +44,4 @@ class ExperimentLogger:
         self.log = Log(f"{self.save_root}/{log_file}", is_print=is_print)
 
     def log_loss(self, loss_name, loss):
-        self.log.write(f'{loss_name}: {loss:.4f}')
+        self.log.write(f'{loss_name}: {loss:.3f}')

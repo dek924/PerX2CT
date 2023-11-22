@@ -51,21 +51,11 @@ def get_rays_for_no_rendering(args, gt_renderer, trained_ct_res=None):
     gt_resolution = gt_renderer.ct_res
     trained_ct_res = torch.from_numpy(gt_resolution).to(torch.float32).cuda() if trained_ct_res is None else torch.tensor(trained_ct_res).cuda() + 2
     batch_size = args.batch_size
-    # if len(gt_resolution) == 4: ## batch x axial x coronal x sagittal
-    #     batch_size = gt_resolution[0]
-    #     gt_resolution = gt_resolution[1:]
-    # else:
-    #     batch_size = 1
-    # skip_slice = gt_resolution[-1] // args.N_samples
-    # slice_idx = np.random.choice(gt_resolution[-1]-1, args.N_samples, replace=False).flatten() + 1
-    # slice_idx = slice_idx.tolist()
     if args.slice_sampling == 'fixed':
         assert (gt_resolution[-1] - 2) % (args.N_samples) == 0, print(args.N_samples)
         slice_idx = list(range(1, gt_resolution[-1] - 1, (gt_resolution[-1] - 2) // (args.N_samples)))
     elif args.slice_sampling == 'random':
-        slice_idx = [i for i in range(0, gt_resolution[-1] - 2)]  ## slice_idx : 0 ~ 319
-        # import pdb;pdb.set_trace()
-        # slice_idx = slice_idx[-1:]
+        slice_idx = [i for i in range(0, gt_resolution[-1] - 2)]  
         slice_idx = np.random.choice(slice_idx, args.N_samples, replace=False).flatten() + 1
         slice_idx = slice_idx.tolist()
         slice_idx.sort()
@@ -79,7 +69,7 @@ def get_rays_for_no_rendering(args, gt_renderer, trained_ct_res=None):
     transformed_points_in_gt = transformed_points_in_gt.unsqueeze(0).repeat(batch_size, 1, 1, 1, 1).cuda()
     transformed_points = gt_renderer.gt2world_coordinate(transformed_points_in_gt)
     gt_resolution_torch = torch.from_numpy(gt_resolution).to(torch.float32).cuda()
-    #transformed_points_prev = transformed_points.clone()
+    
     transformed_points = transformed_points * gt_resolution_torch / (gt_resolution_torch - 2) * (
                 trained_ct_res - 2) / trained_ct_res
 
