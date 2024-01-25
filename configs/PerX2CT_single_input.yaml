@@ -1,0 +1,144 @@
+input_img_size: 128
+input_ct_res: 128
+data_projection_type: plastimatch
+model:
+  base_learning_rate: 4.5e-06
+  target: x2ct_nerf.models.zoom_aegan.INRAEZoomModel
+  params:
+    ckpt_path: null
+    kl_weight: 1.0e-08
+    embed_dim: 256
+    n_embed: 1024
+    image_key: ctslice
+    monitor: val/rec_loss
+    ddconfig:
+      double_z: false
+      z_channels: 575  # 512 * 1 + 63 (local feature for 2 views & positional encoding)
+      resolution: 128
+      in_channels: 3
+      out_ch: 3
+      ch: 128
+      ch_mult:
+      - 1
+      - 2
+      - 4
+      num_res_blocks: 2
+      attn_resolutions:
+      - 32
+      dropout: 0.0
+    metadata:
+      gt_key: cropped_ctslice
+      encoder_module: x2ct_nerf.modules.INREncoderZoomAxisInAlign.INREncoderZoomAxisInAlign
+      decoder_module: taming.modules.diffusionmodules.model.Decoder
+      encoder_params:
+        params:
+          axis_emb_dim: 0
+          zoom_resolution_div: 1
+          zoom_min_scale: 0.
+          axis_in_position: before_inr
+          ct_res: ${input_ct_res}
+          feature_res: 32 # model.params.ddconfig.attn_resolutions[0]
+          N_rand_recon: 16384 # model.params.metadata.encoder_params.params.feature_res ** 2
+          chunk: 1048576
+          no_grad_cond_encoder: false
+          cond_list:
+          - PA
+          main_model_of_encoder:
+            network_module: x2ct_nerf.modules.inr.model.PerspectiveINRNet
+            params:
+              cfg:
+                #near: 0.7
+                #far: 1.3
+                fov: 60
+                N_cond: 1
+                featureonly: False
+                cond_encoder_module: x2ct_nerf.modules.image_encoder.resnet.ResNetEncoder
+                nerf_module: x2ct_nerf.modules.nerf.model.DummyNeRF
+                cond_encoder_params:
+                  cfg:
+                    model_name: resnet101
+                    in_channels: 3
+                    latent_dim: 512
+                    encoder_freeze_layer: layer1
+                    feature_layer: layer2
+                    input_img_size: ${input_img_size}
+                    pretrained: imagenet
+                    weight_dir: ''
+                nerf_params:
+                  cfg:
+                    use_viewdirs: false #help="use full 5D input instead of 3D")
+                    # For input_ch and input_ch_views, position embedding function
+                    multires: 10 #help="log2 of max freq for positional encoding (3D location)")
+                    i_embed: 0 #help="set 0 for default positional encoding, -1 for none")
+                    # For output_ch:
+                    rendering_type: ${data_projection_type}
+                    output_color_ch: ${model.params.ddconfig.z_channels} # color or feature channel
+                    N_importance: 0 #help="number of additional fine samples per ray")
+                    # For network query function
+                    netchunk: 262144 #1024 * 64 #help="number of pts sent through network in parallel, decrease if running out of memory")
+                    batchify_axis: 1 # should be 1 to run multi object, otherwise 0
+      decoder_params: ${model.params.ddconfig}
+    lossconfig:
+      target: x2ct_nerf.modules.losses.vqperceptual.VQLPIPSWithDiscriminator
+      params:
+        disc_conditional: false
+        disc_in_channels: 3
+        disc_start: 0
+        disc_factor: 0.0
+        disc_weight: 0.0
+        codebook_weight: 0.0
+data:
+  target: main.DataModuleFromConfig
+  params:
+    batch_size: 20
+    num_workers: 8
+    train:
+      target: x2ct_nerf.data.LIDC.LIDCTrain
+      params:
+        dataset_class: LIDCMultiInputMultiResTypes
+        training_images_list_file: ./dataset_list/LIDC_CTslice/train.txt
+        size: ${input_img_size}
+        opt: # additional options
+          num_ctslice_per_item: 1
+          xray_size: 128
+          ct_size: 320
+          rendering_type: ${data_projection_type}
+          input_type: # image_key must first!
+          - ${model.params.image_key}
+          - PA
+          ct_augment_list:
+          - min_max_th
+          - normalization
+          xray_augment_list:
+          - normalization
+          CT_MIN_MAX:
+          - 0
+          - 2500
+          XRAY_MIN_MAX:
+          - 0
+          - 255
+    validation:
+      target: x2ct_nerf.data.LIDC.LIDCTest
+      params:
+        dataset_class: ${data.params.train.params.dataset_class}
+        test_images_list_file: ./dataset_list/LIDC_CTslice/val.txt
+        size: ${data.params.train.params.size}
+        opt:
+          num_ctslice_per_item: 1
+          xray_size: 128
+          ct_size: 320
+          rendering_type: ${data_projection_type}
+          input_type: # image_key must first!
+            - ${model.params.image_key}
+            - PA
+          ct_augment_list:
+            - min_max_th
+            - normalization
+          xray_augment_list:
+            - normalization
+          CT_MIN_MAX:
+            - 0
+            - 2500
+          XRAY_MIN_MAX:
+            - 0
+            - 255
