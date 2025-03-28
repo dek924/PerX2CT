@@ -37,7 +37,7 @@ $ pip install -r requirement.txt
 Follow the instructions in [prepare_datasets.md](data_preprocessing/prepare_datasets.md) to preprocess the dataset.
 
 ### Pretrained Model
-- We've provided the pretrained weights used for our paper's experiments. You can download these weights <a href="https://drive.google.com/drive/folders/14_V8E0XklPRax4S4nQfeUnHS2gml-_PO">here</a>.  <br /><br />
+- We've provided the pretrained weights used for our paper's experiments. You can download these weights <a href="https://drive.google.com/drive/folders/1tx1cvJ2kFtmyvKRpbG29l-qwHBGk9qj0">here</a>.  <br /><br />
 
 ## Training
 To train PerX2CT, run `main.py` with the hyper-parameters provided below:
